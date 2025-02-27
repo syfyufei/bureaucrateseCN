@@ -1,0 +1,13 @@
+[Unit]
+Description=Bureaucratese API
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/opt/bureaucratese
+Environment="PATH=/opt/bureaucratese/venv/bin"
+ExecStart=/opt/bureaucratese/venv/bin/gunicorn bureaucratese.web_api:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+
+[Install]
+WantedBy=multi-user.target

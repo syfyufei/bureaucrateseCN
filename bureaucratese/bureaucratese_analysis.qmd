@@ -1,0 +1,273 @@
+---
+title: "基于LEVI词典的中文官方话语分析包技术文档"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+    theme: cosmo
+    fig-width: 8
+    fig-height: 6
+    fig-dpi: 300
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## 摘要 {.unnumbered}
+
+本技术文档详细介绍了一个基于Python的中文官方话语分析工具包的设计与实现。该工具包基于LEVI（Lexicon of Everyday Vocabulary Items）词典，采用模块化架构设计，结合传统词频统计和现代深度学习方法，实现了对中文文本中官方话语使用程度的多维度分析。文档重点阐述了系统架构设计、核心算法实现、性能优化策略以及API接口规范。
+
+## 系统架构
+
+### 整体架构设计
+
+本工具包采用分层架构设计，主要包含以下核心模块：
+
+1. 数据层
+   - LEVI词典管理
+   - 文本预处理
+   - 数据缓存管理
+
+2. 算法层
+   - 基础密度分析引擎
+   - 加权密度分析引擎
+   - BERT语义分析引擎
+
+3. 接口层
+   - 核心API接口
+   - 批处理接口
+   - 工具函数
+
+### 核心组件
+
+#### LEVI词典管理器
+
+```{python}
+#| label: dictionary-structure
+#| code-fold: true
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from bureaucratese.analyzer import BureaucrateseAnalyzer
+from bureaucratese.bert_analyzer import BertBureaucrateseAnalyzer
+
+# 读取词典数据
+df = pd.read_csv('data/RAWdataset.csv')
+
+# 显示词典结构信息
+print("=== LEVI词典结构 ===")
+print("数据列：", list(df.columns))
+print("词典总词条数：", len(df))
+print("官方话语词条数：", len(df[df['typeOfWord'] == '官方话语']))
+print("\n词典示例：")
+print(df.head())
+```
+
+## 核心算法实现
+
+### 基础密度分析
+
+基础密度分析采用词频统计方法，其核心算法实现如下：
+
+1. 文本分词：使用结巴分词器进行中文分词
+2. 词汇匹配：与LEVI词典中的官方话语词条进行匹配
+3. 密度计算：计算官方话语词汇占总词数的比例
+
+```{python}
+#| label: basic-density-implementation
+#| code-fold: true
+
+# 示例文本
+test_text = """中共中央总书记、国家主席、中央军委主席习近平在重要讲话中强调，
+要坚持以人民为中心的发展思想，贯彻新发展理念，构建新发展格局，
+推动高质量发展，全面深化改革开放，促进共同富裕。"""
+
+# 初始化分析器
+analyzer = BureaucrateseAnalyzer()
+
+# 基础密度分析
+basic_result = analyzer.analyze_text(test_text)
+
+# 显示详细分析结果
+print("=== 基础密度分析结果 ===")
+print(f"总词数：{basic_result['total_words']}")
+print(f"官方话语词数：{basic_result['official_word_count']}")
+print(f"密度：{basic_result['density']:.2%}")
+print(f"检测到的官方话语词汇：{', '.join(basic_result['official_words'])}")
+```
+
+### 加权密度分析
+
+加权密度分析考虑词语使用频率，算法实现步骤：
+
+1. 词频权重计算：基于LEVI词典中的频率信息
+2. 加权求和：对检测到的官方话语词汇进行加权
+3. 归一化：计算加权后的密度值
+
+```{python}
+#| label: weighted-density-implementation
+#| code-fold: true
+
+# 加权密度分析
+weighted_result = analyzer.analyze_text_weighted(test_text)
+
+# 显示加权分析结果
+print("=== 加权密度分析结果 ===")
+print(f"加权密度：{weighted_result['weighted_density']:.2%}")
+```
+
+### BERT语义分析
+
+BERT语义分析采用深度学习方法，实现步骤：
+
+1. 文本编码：使用BERT模型将文本转换为向量表示
+2. 语义相似度计算：计算文本与标准官方话语样本的余弦相似度
+3. 密度评估：基于相似度计算语义密度
+
+```{python}
+#| label: bert-implementation
+#| code-fold: true
+
+# BERT语义分析
+bert_analyzer = BertBureaucrateseAnalyzer()
+semantic_result = bert_analyzer.calculate_semantic_density(test_text)
+
+# 显示语义分析结果
+print("=== BERT语义分析结果 ===")
+print(f"语义密度：{semantic_result['semantic_density']:.2%}")
+print(f"加权相似度：{semantic_result['weighted_similarity']:.4f}")
+```
+
+## 性能优化
+
+### 数据预处理优化
+
+1. 词典索引优化
+   - 使用哈希表存储词典，提高查询效率
+   - 预计算词频权重，减少运行时计算
+
+2. 文本处理优化
+   - 实现批量处理接口
+   - 多线程并行处理
+
+### BERT模型优化
+
+1. 模型加载优化
+   - 模型预加载
+   - 显存管理优化
+
+2. 推理性能优化
+   - 批量推理
+   - 计算图优化
+
+## API接口文档
+
+### 基础分析接口
+
+```python
+class BureaucrateseAnalyzer:
+    def analyze_text(self, text: str) -> dict:
+        """基础密度分析
+        
+        Args:
+            text (str): 待分析文本
+            
+        Returns:
+            dict: {
+                'density': float,  # 官方话语密度
+                'official_words': list,  # 检测到的官方话语词汇
+                'total_words': int,  # 总词数
+                'official_word_count': int  # 官方话语词数
+            }
+        """
+        pass
+
+    def analyze_text_weighted(self, text: str) -> dict:
+        """加权密度分析
+        
+        Args:
+            text (str): 待分析文本
+            
+        Returns:
+            dict: {
+                'weighted_density': float,  # 加权密度
+                'official_words': list,  # 检测到的官方话语词汇
+                'total_words': int,  # 总词数
+                'official_word_count': int  # 官方话语词数
+            }
+        """
+        pass
+```
+
+### BERT分析接口
+
+```python
+class BertBureaucrateseAnalyzer:
+    def calculate_semantic_density(self, text: str) -> dict:
+        """BERT语义密度分析
+        
+        Args:
+            text (str): 待分析文本
+            
+        Returns:
+            dict: {
+                'semantic_density': float,  # 语义密度
+                'weighted_similarity': float  # 加权相似度
+            }
+        """
+        pass
+```
+
+## 性能测试
+
+### 大规模文本分析性能
+
+```{python}
+#| label: performance-test
+#| code-fold: true
+
+# 读取香港新闻数据分析结果
+results = pd.read_csv('hknews_full_analysis_results.csv')
+
+# 计算年度平均密度
+yearly_avg = results.groupby('year')[
+    ['basic_density', 'weighted_density', 'semantic_density']
+].mean()
+
+# 绘制性能对比图
+plt.figure(figsize=(12, 6))
+for col in ['basic_density', 'weighted_density', 'semantic_density']:
+    plt.plot(yearly_avg.index, yearly_avg[col], label=col, marker='o')
+
+plt.title('不同分析方法的性能对比')
+plt.xlabel('年份')
+plt.ylabel('密度值')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+## 总结与展望
+
+### 技术创新点
+
+1. 多维度分析方法的整合
+2. BERT语义分析的创新应用
+3. 高效的性能优化策略
+
+### 未来优化方向
+
+1. 支持更多深度学习模型
+2. 优化大规模文本处理性能
+3. 增强API的可扩展性
+
+## 参考文献
+
+1. Devlin, J., Chang, M. W., Lee, K., & Toutanova, K. (2018). BERT: Pre-training of deep bidirectional transformers for language understanding. arXiv preprint arXiv:1810.04805.
+2. 陈力丹. (2010). 官方话语的特点及其社会影响. 新闻与传播研究, 17(2), 67-74.
+3. Mikolov, T., Chen, K., Corrado, G., & Dean, J. (2013). Efficient estimation of word representations in vector space. arXiv preprint arXiv:1301.3781.
+4. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., ... & Polosukhin, I. (2017). Attention is all you need. Advances in neural information processing systems, 30.
