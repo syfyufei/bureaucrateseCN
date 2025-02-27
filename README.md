@@ -1,6 +1,6 @@
 # Bureaucratese Analyzer | “官腔”分析器
 
-[English](#bureaucratese-analyzer) | [中文](#“官腔”分析器)
+[English](#bureaucratese-analyzer) | [中文](#chinese)
 
 ---
 
@@ -223,7 +223,7 @@ MIT License
 ---
 
 <a name="chinese"></a>
-# “官腔”分析器
+# 官腔分析器
 
 这是一个专门用于分析文本中官方话语密度的Python包。通过多种分析方法，包括基础频率分析、加权分析和基于BERT的语义分析，帮助研究人员和分析师测量和评估文本中官方话语的使用程度。
 
