@@ -1,0 +1,5 @@
+include LICENSE
+include README.md
+include data/README.md
+include models/README.md
+recursive-include bureaucratese *

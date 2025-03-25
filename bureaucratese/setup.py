@@ -1,9 +1,14 @@
 from setuptools import setup, find_packages
+import os
+
+# 获取README内容
+with open('README.md', 'r', encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name="bureaucratese",
     version="0.1.0",
-    packages=find_packages(),
+    packages=find_packages(include=['bureaucratese', 'bureaucratese.*']),
     install_requires=[
         'pandas>=1.0.0',
         'jieba>=0.42.1',
@@ -15,7 +20,7 @@ setup(
     author="Adrian",
     author_email="",
     description="A Python package for analyzing the density of Chinese official discourse in text",
-    long_description=open('README.md').read(),
+    long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/adrian/bureaucratese",
     classifiers=[
@@ -30,6 +35,6 @@ setup(
     python_requires='>=3.6',
     include_package_data=True,
     package_data={
-        'bureaucratese': ['data/*.csv', 'models/bert-base-chinese/*']
+        'bureaucratese': ['data/*.csv', 'models/bert-base-chinese/*', 'preprocessed/*']
     },
 )
